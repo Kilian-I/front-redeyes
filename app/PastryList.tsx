@@ -74,7 +74,7 @@ export default function PastryList({ pastries }: PastryListProps) {
   // --- ENVOI DE LA COMMANDE AU BACK ---
   const handleCheckout = async () => {
     if (cartItems.length === 0) return;
-    
+
     if (!selectedAddressFeature) {
       alert("Veuillez sélectionner votre adresse de livraison dans la liste suggérée.");
       return;
@@ -93,7 +93,8 @@ export default function PastryList({ pastries }: PastryListProps) {
             id: item.pastry.id,
             quantity: item.quantity
           })),
-          address: selectedAddressFeature.properties
+          address: selectedAddressFeature.properties,
+          coordinates: selectedAddressFeature.geometry.coordinates
         }),
       });
 
@@ -139,7 +140,7 @@ export default function PastryList({ pastries }: PastryListProps) {
             {totalQuantity}
           </span>
         </h2>
-        
+
         <div className="flex-1 overflow-y-auto pr-1 mb-4">
           {cartItems.length > 0 ? (
             <ul className="space-y-3">
@@ -200,7 +201,7 @@ export default function PastryList({ pastries }: PastryListProps) {
             <span className="text-base uppercase font-bold text-[#807F7C]">Total Global</span>
             <span className="text-large font-mono font-black text-[#3E2723]">{totalAmount.toFixed(2)} €</span>
           </div>
-          
+
           <button
             onClick={handleCheckout}
             disabled={isRedirecting}
@@ -215,7 +216,7 @@ export default function PastryList({ pastries }: PastryListProps) {
 
   return (
     <section className="py-6 px-4 md:px-0 bg-[#F5F5DC]/10 min-h-screen relative">
-      
+
       {/* 📱 BOUTON PANIER FLOTTANT MOBILE */}
       <div className="lg:hidden fixed top-4 right-4 z-40">
         <button
@@ -237,10 +238,10 @@ export default function PastryList({ pastries }: PastryListProps) {
       {isMobileCartOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setIsMobileCartOpen(false)} />
-          
+
           <div className="fixed inset-y-0 right-0 w-full max-w-sm bg-white p-6 shadow-2xl flex flex-col justify-between border-l-4 border-[#3E2723]">
-            <button 
-              onClick={() => setIsMobileCartOpen(false)} 
+            <button
+              onClick={() => setIsMobileCartOpen(false)}
               className="absolute top-4 right-4 text-[#3E2723] p-1 hover:bg-[#F5F5DC] rounded-lg transition-colors"
             >
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-6 h-6">
@@ -256,7 +257,7 @@ export default function PastryList({ pastries }: PastryListProps) {
 
       {/* GRILLE D'AFFICHAGE PRINCIPALE */}
       <div className="grid grid-cols-1 lg:grid-cols-10 gap-10 items-start">
-        
+
         {/* CATALOGUE DE PÂTISSERIES */}
         <div className="lg:col-span-7">
           <div className="mb-8 max-w-md">
@@ -277,9 +278,8 @@ export default function PastryList({ pastries }: PastryListProps) {
               return (
                 <div
                   key={p.id}
-                  className={`border border-[#3E2723]/10 p-6 rounded-2xl shadow-sm bg-white flex flex-col justify-between transition-all hover:border-[#3E2723]/30 hover:shadow-md ${
-                    isOutOfStock ? 'opacity-60 grayscale-[30%]' : ''
-                  }`}
+                  className={`border border-[#3E2723]/10 p-6 rounded-2xl shadow-sm bg-white flex flex-col justify-between transition-all hover:border-[#3E2723]/30 hover:shadow-md ${isOutOfStock ? 'opacity-60 grayscale-[30%]' : ''
+                    }`}
                 >
                   <div>
                     {p.imageUrl && (
@@ -307,11 +307,10 @@ export default function PastryList({ pastries }: PastryListProps) {
                     <button
                       onClick={() => handleAddToCart(p)}
                       disabled={isOutOfStock || quantityInCart >= p.stock || isRedirecting}
-                      className={`px-5 py-2.5 rounded-xl text-base font-bold transition-all uppercase tracking-wider text-sm ${
-                        isOutOfStock || quantityInCart >= p.stock
+                      className={`px-5 py-2.5 rounded-xl text-base font-bold transition-all uppercase tracking-wider text-sm ${isOutOfStock || quantityInCart >= p.stock
                           ? 'bg-[#F5F5DC] text-[#807F7C] cursor-not-allowed border border-transparent'
                           : 'bg-[#3E2723] text-[#FFF9C4] hover:bg-[#807F7C] hover:text-white'
-                      }`}
+                        }`}
                     >
                       {isOutOfStock ? 'Rupture' : quantityInCart >= p.stock ? 'Max' : 'Ajouter'}
                     </button>
