@@ -2,7 +2,7 @@ import Image from 'next/image';
 import PastryList from './PastryList';
 
 export default async function Home() {
-  const res = await fetch('http://localhost:3000/pastries', { cache: 'no-store' });
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/pastries`, { cache: 'no-store' });
   const pastries = await res.json();
 
   const safePastries = Array.isArray(pastries) ? pastries : [];

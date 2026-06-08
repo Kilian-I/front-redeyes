@@ -82,7 +82,7 @@ export default function AdminDashboard() {
 
   const fetchProducts = async () => {
     try {
-      const res = await fetch('http://localhost:3000/pastries/admin', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/pastries/admin`, {
         headers: getAuthHeaders(false)
       });
       const data = await res.json();
@@ -94,7 +94,7 @@ export default function AdminDashboard() {
 
   const fetchOrders = async () => {
     try {
-      const res = await fetch('http://localhost:3000/payments/orders', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/payments/orders`, {
         headers: getAuthHeaders(false)
       });
       const data = await res.json();
@@ -107,7 +107,7 @@ export default function AdminDashboard() {
 
   const handleToggleStatus = async (orderId: number, currentStatus: boolean) => {
     try {
-      const res = await fetch(`http://localhost:3000/payments/orders/${orderId}/status`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/payments/orders/${orderId}/status`, {
         method: 'PATCH',
         headers: getAuthHeaders(),
         body: JSON.stringify({ isCompleted: !currentStatus })
@@ -127,7 +127,7 @@ export default function AdminDashboard() {
 
   const fetchShopConfig = async () => {
     try {
-      const res = await fetch('http://localhost:3000/payments/config', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/payments/config`, {
         headers: getAuthHeaders(false)
       });
       const data = await res.json();
@@ -169,7 +169,7 @@ export default function AdminDashboard() {
     e.preventDefault();
     setIsSavingConfig(true);
     try {
-      const response = await fetch('http://localhost:3000/payments/config', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/payments/config`, {
         method: 'PATCH',
         headers: getAuthHeaders(),
         body: JSON.stringify({
@@ -197,7 +197,9 @@ export default function AdminDashboard() {
     e.preventDefault();
     
     const isEditing = editingId !== null;
-    const url = isEditing ? `http://localhost:3000/pastries/${editingId}` : 'http://localhost:3000/pastries';
+    const url = isEditing 
+      ? `${process.env.NEXT_PUBLIC_API_URL}/pastries/${editingId}` 
+      : `${process.env.NEXT_PUBLIC_API_URL}/pastries`;
     const method = isEditing ? 'PATCH' : 'POST';
 
     const payload = {
@@ -230,7 +232,7 @@ export default function AdminDashboard() {
 
   const handleQuickStock = async (id: number, currentStock: number, change: number) => {
     const newStock = Math.max(0, currentStock + change);
-    await fetch(`http://localhost:3000/pastries/${id}`, {
+    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/pastries/${id}`, {
       method: 'PATCH',
       headers: getAuthHeaders(),
       body: JSON.stringify({ stock: newStock }),
@@ -240,7 +242,7 @@ export default function AdminDashboard() {
 
   const handleDelete = async (id: number) => {
     if (confirm('Voulez-vous vraiment archiver ce produit ?')) {
-      const response = await fetch(`http://localhost:3000/pastries/${id}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/pastries/${id}`, {
         method: 'DELETE',
         headers: getAuthHeaders(false)
       });

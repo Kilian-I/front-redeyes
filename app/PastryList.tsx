@@ -83,7 +83,7 @@ export default function PastryList({ pastries }: PastryListProps) {
     setIsRedirecting(true);
 
     try {
-      const response = await fetch('http://localhost:3000/payments/checkout', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/payments/checkout`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
