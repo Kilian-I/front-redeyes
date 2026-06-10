@@ -6,22 +6,30 @@ export async function POST(request: Request): Promise<NextResponse> {
   const filename = searchParams.get('filename');
 
   if (!filename) {
-    return NextResponse.json({ error: 'Filename is required' }, { status: 400 });
+    return NextResponse.json({ error: 'Le nom du fichier est requis' }, { status: 400 });
+  }
+
+  if (!process.env.BLOB_READ_WRITE_TOKEN) {
+    console.error("ERREUR CRUCIALE : Le token BLOB_READ_WRITE_TOKEN est introuvable !");
+    return NextResponse.json({ error: 'Configuration Stripe/Blob manquante sur le serveur' }, { status: 500 });
   }
 
   try {
-    const requestBody = request.body;
-    if (!requestBody) {
-      return NextResponse.json({ error: 'No file body provided' }, { status: 400 });
+    // request.body est un ReadableStream binaire, ce que 'put' accepte parfaitement
+    const stream = request.body;
+
+    if (!stream) {
+      return NextResponse.json({ error: 'Le contenu du fichier est vide' }, { status: 400 });
     }
 
-    // Envoi à Vercel Blob
-    const blob = await put(filename, requestBody, {
+    // On passe le flux directement à Vercel Blob
+    const blob = await put(filename, stream, {
       access: 'public',
     });
 
     return NextResponse.json(blob);
-  } catch (error) {
-    return NextResponse.json({ error: 'Upload failed' }, { status: 500 });
+  } catch (error: any) {
+    console.error("Erreur détaillée Vercel Blob :", error);
+    return NextResponse.json({ error: 'Upload failed', message: error.message }, { status: 500 });
   }
 }
