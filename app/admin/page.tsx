@@ -46,8 +46,10 @@ export default function AdminDashboard() {
   const [shopSuggestions, setShopSuggestions] = useState<any[]>([]);
   const [shopGeo, setShopGeo] = useState({ lat: 49.2583, lon: 4.0317 });
   const [isSavingConfig, setIsSavingConfig] = useState(false);
+  const [isUploading, setIsUploading] = useState(false); // État pour le chargement de l'image
 
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null); // Stocke le fichier binaire sélectionné
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -193,8 +195,15 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setImageFile(e.target.files[0]);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsUploading(true);
     
     const isEditing = editingId !== null;
     const url = isEditing 
@@ -202,15 +211,33 @@ export default function AdminDashboard() {
       : `${process.env.NEXT_PUBLIC_API_URL}/pastries`;
     const method = isEditing ? 'PATCH' : 'POST';
 
-    const payload = {
-      name: formData.name,
-      description: formData.description,
-      price: parseFloat(formData.price) || 0,
-      stock: parseInt(formData.stock) || 0,
-      imageUrl: formData.imageUrl.trim() !== '' ? formData.imageUrl : null 
-    };
-
     try {
+      let finalImageUrl = formData.imageUrl;
+
+      // 1. Si un nouveau fichier est sélectionné, on l'envoie vers Vercel Blob
+      if (imageFile) {
+        const uploadRes = await fetch(`/api/upload?filename=${encodeURIComponent(imageFile.name)}`, {
+          method: 'POST',
+          body: imageFile,
+        });
+
+        if (!uploadRes.ok) {
+          throw new Error("Échec de l'envoi de l'image sur Vercel Blob");
+        }
+
+        const blobData = await uploadRes.json();
+        finalImageUrl = blobData.url; // L'URL publique renvoyée par Vercel
+      }
+
+      // 2. Préparation du payload final pour le Back-end
+      const payload = {
+        name: formData.name,
+        description: formData.description,
+        price: parseFloat(formData.price) || 0,
+        stock: parseInt(formData.stock) || 0,
+        imageUrl: finalImageUrl.trim() !== '' ? finalImageUrl : null 
+      };
+
       const response = await fetch(url, {
         method: method,
         headers: getAuthHeaders(),
@@ -225,8 +252,10 @@ export default function AdminDashboard() {
         const errorData = await response.json();
         alert(`Erreur serveur : ${errorData.message || 'Impossible de traiter la demande.'}`);
       }
-    } catch (err) {
-      alert("Impossible de joindre le serveur de pâtisseries.");
+    } catch (err: any) {
+      alert(err.message || "Impossible de joindre le serveur de pâtisseries.");
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -252,6 +281,7 @@ export default function AdminDashboard() {
 
   const startEdit = (product: any) => {
     setEditingId(product.id);
+    setImageFile(null); // On reset le sélecteur de fichier
     setFormData({
       name: product.name,
       description: product.description,
@@ -263,6 +293,7 @@ export default function AdminDashboard() {
 
   const resetForm = () => {
     setEditingId(null);
+    setImageFile(null);
     setFormData({ name: '', description: '', price: '', stock: '0', imageUrl: '' });
   };
 
@@ -388,8 +419,8 @@ export default function AdminDashboard() {
                   <tr key={order.id} className="hover:bg-[#F5F5DC]/10 transition-colors">
                     <td className="py-4 font-mono font-bold text-[#807F7C]">#{order.id}</td>
                     <td className="py-4">
-                      <p className="font-black text-[#3E2723] uppercase truncate max-w-[200px]">{order.deliveryName || 'Client'}</p>
-                      <p className="font-mono text-[#807F7C] text-sm truncate max-w-[200px]">{order.customerEmail}</p>
+                      <p className="font-black text-[#3E2723] uppercase truncate max-w-50">{order.deliveryName || 'Client'}</p>
+                      <p className="font-mono text-[#807F7C] text-sm truncate max-w-50">{order.customerEmail}</p>
                     </td>
                     <td className="py-4">
                       <p className="font-bold text-[#3E2723]">{order.streetNumber} {order.streetName}</p>
@@ -459,13 +490,28 @@ export default function AdminDashboard() {
                 <input type="number" required className="w-full bg-[#F5F5DC]/20 border border-[#3E2723]/20 p-2.5 rounded-xl outline-none focus:border-[#3E2723] text-[#3E2723] font-mono" value={formData.stock} onChange={e => setFormData({ ...formData, stock: e.target.value })} />
               </div>
             </div>
+            
+            {/* CHANGEMENT ICI : Input type="file" au lieu du texte classique */}
             <div>
-              <label className="block font-bold mb-1 text-[#3E2723] text-sm uppercase">URL Image (Optionnel)</label>
-              <input type="text" className="w-full bg-[#F5F5DC]/20 border border-[#3E2723]/20 p-2.5 rounded-xl outline-none focus:border-[#3E2723] text-[#3E2723]" value={formData.imageUrl} onChange={e => setFormData({ ...formData, imageUrl: e.target.value })} />
+              <label className="block font-bold mb-1 text-[#3E2723] text-sm uppercase">Image du gâteau</label>
+              <input 
+                type="file" 
+                accept="image/*"
+                className="w-full bg-[#F5F5DC]/20 border border-[#3E2723]/20 p-2 rounded-xl outline-none focus:border-[#3E2723] text-[#3E2723] file:mr-4 file:py-1 file:px-3 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-[#3E2723] file:text-[#FFF9C4] hover:file:bg-[#807F7C] file:cursor-pointer" 
+                onChange={handleFileChange} 
+              />
+              {formData.imageUrl && !imageFile && (
+                <p className="text-xs text-[#807F7C] mt-1 italic truncate">Image actuelle : {formData.imageUrl}</p>
+              )}
             </div>
+
             <div className="flex gap-2 pt-2">
-              <button type="submit" className="flex-1 bg-[#3E2723] text-[#FFF9C4] py-3 rounded-xl font-bold uppercase tracking-wider hover:bg-[#807F7C] transition-colors">
-                {editingId ? 'Sauvegarder' : 'Créer'}
+              <button 
+                type="submit" 
+                disabled={isUploading}
+                className="flex-1 bg-[#3E2723] text-[#FFF9C4] py-3 rounded-xl font-bold uppercase tracking-wider hover:bg-[#807F7C] transition-colors disabled:bg-[#807F7C]/40"
+              >
+                {isUploading ? 'Téléversement...' : editingId ? 'Sauvegarder' : 'Créer'}
               </button>
               {editingId && (
                 <button type="button" onClick={resetForm} className="bg-[#F5F5DC] text-[#3E2723] px-4 rounded-xl font-bold hover:bg-[#3E2723]/10 uppercase tracking-wide text-sm">
