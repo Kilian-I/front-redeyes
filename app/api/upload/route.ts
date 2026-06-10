@@ -32,4 +32,5 @@ export async function POST(request: Request): Promise<NextResponse> {
     console.error("Erreur détaillée Vercel Blob :", error);
     return NextResponse.json({ error: 'Upload failed', message: error.message }, { status: 500 });
   }
+  
 }
